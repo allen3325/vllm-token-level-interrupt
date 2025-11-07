@@ -503,23 +503,38 @@ class EngineCore:
         )
 
         if preserve_state:
-            # Step 1: Prepare scheduler by preempting all running requests
-            self.scheduler.prepare_for_sleep()
-
-            # Step 2: Export scheduler state for checkpointing
-            scheduler_checkpoint = self.scheduler.get_checkpoint_state()
-
-            # Step 3: Save checkpoint
-            from vllm.v1.engine.checkpoint import SchedulerCheckpoint
-            checkpoint = SchedulerCheckpoint(
-                requests=scheduler_checkpoint["requests"],
-                waiting_queue_data=scheduler_checkpoint["waiting_queue_data"],
-                running_request_ids=scheduler_checkpoint["running_request_ids"],
-                kv_block_allocations=scheduler_checkpoint["kv_block_allocations"],
-                prefix_cache_state=scheduler_checkpoint["prefix_cache_state"],
+            # Check if there are any requests to preserve
+            has_requests = (
+                len(self.scheduler.requests) > 0 or
+                len(self.scheduler.running) > 0 or
+                len(self.scheduler.waiting) > 0
             )
-            self.checkpoint_manager.save_checkpoint(checkpoint)
-            logger.info("Saved checkpoint for interruptible inference")
+
+            if has_requests:
+                # Step 1: Prepare scheduler by preempting all running requests
+                self.scheduler.prepare_for_sleep()
+
+                # Step 2: Export scheduler state for checkpointing
+                scheduler_checkpoint = self.scheduler.get_checkpoint_state()
+
+                # Step 3: Save checkpoint
+                from vllm.v1.engine.checkpoint import SchedulerCheckpoint
+                checkpoint = SchedulerCheckpoint(
+                    requests=scheduler_checkpoint["requests"],
+                    waiting_queue_data=scheduler_checkpoint["waiting_queue_data"],
+                    running_request_ids=scheduler_checkpoint["running_request_ids"],
+                    kv_block_allocations=scheduler_checkpoint["kv_block_allocations"],
+                    prefix_cache_state=scheduler_checkpoint["prefix_cache_state"],
+                )
+                self.checkpoint_manager.save_checkpoint(checkpoint)
+                logger.info(
+                    "Saved checkpoint for interruptible inference (%d requests)",
+                    len(scheduler_checkpoint["requests"]),
+                )
+            else:
+                logger.debug(
+                    "No active requests to preserve, skipping checkpoint"
+                )
 
         # Offload GPU memory
         self.model_executor.sleep(level)
