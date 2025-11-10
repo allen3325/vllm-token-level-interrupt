@@ -227,6 +227,11 @@ def deserialize_request(data: dict[str, Any]) -> Request:
     request._all_token_ids = data["_all_token_ids"]
     request.spec_token_ids = data["spec_token_ids"]
 
+    # Recreate ConstantList wrappers (required for read-only access)
+    from vllm.v1.utils import ConstantList
+    request.output_token_ids = ConstantList(request._output_token_ids)
+    request.all_token_ids = ConstantList(request._all_token_ids)
+
     # Restore block hashes
     request.block_hashes = [BlockHash(h) for h in data["block_hashes"]]
 
