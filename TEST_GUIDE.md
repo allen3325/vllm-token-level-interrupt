@@ -51,11 +51,12 @@ from vllm import LLM, SamplingParams
 # Initialize with sleep mode enabled
 print("🔧 Initializing vLLM with sleep mode...")
 llm = LLM(
-    model="meta-llama/Llama-3.2-1B",  # Small model for quick testing
+    model="Qwen/Qwen3-0.6B",  # Small model for quick testing
     enable_sleep_mode=True,
     dtype="bfloat16",
-    max_model_len=2048,
-    max_num_seqs=16,
+    max_model_len=128,
+    max_num_seqs=1,
+    max_num_batched_tokens=128,
 )
 
 print("✅ Model loaded successfully!")
@@ -173,10 +174,12 @@ pytest tests/entrypoints/openai/test_sleep.py -v
 
 ```bash
 # Terminal 1: Start vLLM server with sleep mode enabled
-vllm serve meta-llama/Llama-3.2-1B \
+vllm serve Qwen/Qwen3-0.6B \
     --enable-sleep-mode \
     --dtype bfloat16 \
-    --max-model-len 2048 \
+    --max-model-len 128 \
+    --max-num-seqs 1 \
+    --max-num-batched-tokens 128 \
     --port 8000
 ```
 
@@ -198,7 +201,7 @@ curl http://localhost:8000/health
 curl http://localhost:8000/v1/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "meta-llama/Llama-3.2-1B",
+    "model": "Qwen/Qwen3-0.6B",
     "prompt": "The meaning of life is",
     "max_tokens": 50,
     "temperature": 0.0
@@ -208,7 +211,7 @@ curl http://localhost:8000/v1/completions \
 curl http://localhost:8000/v1/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "meta-llama/Llama-3.2-1B",
+    "model": "Qwen/Qwen3-0.6B",
     "prompt": "The meaning of life is",
     "max_tokens": 50,
     "temperature": 0.0
@@ -234,7 +237,7 @@ curl http://localhost:8000/is_sleeping
 curl http://localhost:8000/v1/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "meta-llama/Llama-3.2-1B",
+    "model": "Qwen/Qwen3-0.6B",
     "prompt": "The meaning of life is",
     "max_tokens": 50,
     "temperature": 0.0
@@ -263,7 +266,7 @@ client = openai.OpenAI(
     api_key="dummy",  # vLLM doesn't require real key
 )
 
-MODEL = "meta-llama/Llama-3.2-1B"
+MODEL = "Qwen/Qwen3-0.6B"
 PROMPT = "Write a short story about a robot learning to dream:"
 
 # Test 1: Generate before sleep
@@ -338,7 +341,7 @@ logging.getLogger("vllm.v1.engine.core").setLevel(logging.DEBUG)
 from vllm import LLM, SamplingParams
 
 # Your test code here...
-llm = LLM(model="meta-llama/Llama-3.2-1B", enable_sleep_mode=True)
+llm = LLM(model="Qwen/Qwen3-0.6B", enable_sleep_mode=True)
 llm.sleep(level=2)
 llm.wake_up()
 ```
@@ -348,7 +351,7 @@ llm.wake_up()
 ```python
 from vllm import LLM, SamplingParams
 
-llm = LLM(model="meta-llama/Llama-3.2-1B", enable_sleep_mode=True)
+llm = LLM(model="Qwen/Qwen3-0.6B", enable_sleep_mode=True)
 
 # Access checkpoint manager (for debugging)
 checkpoint_mgr = llm.llm_engine.engine_core.checkpoint_manager
@@ -395,7 +398,7 @@ Create `test_performance.py`:
 import time
 from vllm import LLM, SamplingParams
 
-llm = LLM(model="meta-llama/Llama-3.2-1B", enable_sleep_mode=True)
+llm = LLM(model="Qwen/Qwen3-0.6B", enable_sleep_mode=True)
 
 # Measure sleep time
 print("⏱️  Measuring sleep overhead...")
@@ -445,7 +448,7 @@ pip install torch --index-url https://download.pytorch.org/whl/cu118
 ### Issue 2: `CUDA out of memory`
 ```bash
 # Solution: Use smaller model or reduce batch size
-vllm serve meta-llama/Llama-3.2-1B \
+vllm serve Qwen/Qwen3-0.6B \
     --enable-sleep-mode \
     --max-model-len 1024 \
     --max-num-seqs 4  # Reduce from default
@@ -457,7 +460,7 @@ vllm serve meta-llama/Llama-3.2-1B \
 curl http://localhost:8000/health
 
 # Or restart server with verbose logging
-vllm serve meta-llama/Llama-3.2-1B \
+vllm serve Qwen/Qwen3-0.6B \
     --enable-sleep-mode \
     --log-level debug
 ```
@@ -480,7 +483,7 @@ from vllm import LLM, SamplingParams
 
 print("1. Initializing...")
 llm = LLM(
-    model="meta-llama/Llama-3.2-1B",
+    model="Qwen/Qwen3-0.6B",
     enable_sleep_mode=True,
     dtype="auto",
 )

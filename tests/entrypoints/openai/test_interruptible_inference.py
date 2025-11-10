@@ -13,7 +13,7 @@ import requests
 
 from ...utils import RemoteOpenAIServer
 
-MODEL_NAME = "meta-llama/Llama-3.2-1B"
+MODEL_NAME = "Qwen/Qwen3-0.6B"
 
 
 def test_interruptible_inference():
@@ -24,9 +24,9 @@ def test_interruptible_inference():
         "--dtype",
         "bfloat16",
         "--max-model-len",
-        "2048",
+        "1024",
         "--max-num-seqs",
-        "16",
+        "4",
         "--enable-sleep-mode",
     ]
 
@@ -57,7 +57,7 @@ def test_interruptible_inference():
         # Step 2: Put engine to sleep with state preservation
         response = requests.post(
             remote_server.url_for("sleep"),
-            params={"level": "2", "preserve_state": "true"},
+            params={"level": "1", "preserve_state": "true"},
         )
         assert response.status_code == 200
 

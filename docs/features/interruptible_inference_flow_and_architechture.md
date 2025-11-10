@@ -38,10 +38,10 @@ graph TB
     Scheduler --> KVManager
     Engine --> GPUWorker
 
-    style CheckpointMgr fill:#ff9999
-    style Scheduler fill:#99ccff
-    style KVManager fill:#99ff99
-    style GPUWorker fill:#ffcc99
+    style CheckpointMgr fill:#8B4545,stroke:#ff6b6b,color:#fff
+    style Scheduler fill:#4A5F7F,stroke:#6fa3ef,color:#fff
+    style KVManager fill:#4A7C59,stroke:#6fbf73,color:#fff
+    style GPUWorker fill:#8B6F47,stroke:#ffb366,color:#fff
 ```
 
 ## 2. State Preservation Flow (Sleep → Wake)
@@ -182,10 +182,10 @@ graph LR
     Requests --> Status
     Requests --> Blocks
 
-    style CM fill:#ff9999
-    style SC fill:#ffcccc
-    style BlockAlloc fill:#99ff99
-    style PCache fill:#99ff99
+    style CM fill:#8B4545,stroke:#ff6b6b,color:#fff
+    style SC fill:#4A5F7F,stroke:#6fa3ef,color:#fff
+    style BlockAlloc fill:#4A7C59,stroke:#6fbf73,color:#fff
+    style PCache fill:#8B6F47,stroke:#ffb366,color:#fff
 ```
 
 ## 4. Request Lifecycle with Interruptible Inference
@@ -270,9 +270,9 @@ graph TB
     Before --> During
     During --> After
 
-    style GPU1 fill:#99ccff
-    style CPU fill:#ffcc99
-    style GPU3 fill:#99ccff
+    style GPU1 fill:#8B4545,stroke:#ff6b6b,color:#fff
+    style CPU fill:#4A5F7F,stroke:#6fa3ef,color:#fff
+    style GPU3 fill:#4A7C59,stroke:#6fbf73,color:#fff
 ```
 
 ## 6. Decision Flow: preserve_state Parameter
@@ -311,11 +311,11 @@ flowchart TD
     RestoreState --> ReconnectKV[Reconnect KV blocks]
     ReconnectKV --> EndNew[Resume inference]
 
-    style Check fill:#ffcccc
-    style NewPath fill:#99ff99
-    style OldPath fill:#cccccc
-    style SaveCheckpoint fill:#ff9999
-    style LoadCheckpoint fill:#ff9999
+    style Check fill:#8B4545,stroke:#ff6b6b,color:#fff
+    style NewPath fill:#4A5F7F,stroke:#6fa3ef,color:#fff
+    style OldPath fill:#4A7C59,stroke:#6fbf73,color:#fff
+    style SaveCheckpoint fill:#8B4545,stroke:#ff6b6b,color:#fff#ff9999
+    style LoadCheckpoint fill:#4A5F7F,stroke:#6fa3ef,color:#fff#ff9999
 ```
 
 ## 7. Checkpoint Data Structure
@@ -411,10 +411,10 @@ flowchart TD
     CopyCPUGPU --> RebuildBuffers[Rebuild model buffers]
     RebuildBuffers --> WakeComplete[Wake complete]
 
-    style PreserveCheck fill:#ffcccc
-    style ClearCache fill:#99ff99
-    style ClearBatch fill:#99ff99
-    style OffloadBoth fill:#ff9999
+    style PreserveCheck fill:#8B4545,stroke:#ff6b6b,color:#fff
+    style ClearCache fill:#4A5F7F,stroke:#6fa3ef,color:#fff
+    style ClearBatch fill:#4A7C59,stroke:#6fbf73,color:#fff
+    style OffloadBoth fill:#4A7C59,stroke:#6fbf73,color:#fff
 ```
 
 ## 9. Error Handling and Edge Cases
@@ -467,14 +467,16 @@ flowchart TD
     S6 --> W1
     W9 --> R1
 
-    style SE1 fill:#ffff99
-    style SE2 fill:#ffcc99
-    style SE3 fill:#ff9999
-    style WE1 fill:#ff9999
-    style WE2 fill:#ffcc99
-    style WE3 fill:#ffcc99
-    style RE1 fill:#ffff99
-    style RE2 fill:#ffcc99
+    style SE1 fill:#4A7C59,stroke:#6fbf73,color:#fff
+    style SE2 fill:#fc932aff
+    style SE3 fill:#ff5f5fff
+    style WE1 fill:#ff5f5fff
+    style WE2 fill:#fc932aff
+    style WE3 fill:#fc932aff
+    style RE1 fill:#4A7C59,stroke:#6fbf73,color:#fff
+    style RE2 fill:#fc932aff
+
+    #ff5f5fff
 ```
 
 ## 10. Comparison: With vs Without preserve_state
@@ -519,10 +521,10 @@ graph TB
         N8 --> N9
     end
 
-    style O4 fill:#ff9999
-    style N4 fill:#99ff99
-    style N8 fill:#99ff99
-    style N9 fill:#99ff99
+    style O4 fill:#ff6c6cff
+    style N4 fill:#1cc91cff
+    style N8 fill:#1cc91cff
+    style N9 fill:#1cc91cff
 ```
 
 ## Summary
