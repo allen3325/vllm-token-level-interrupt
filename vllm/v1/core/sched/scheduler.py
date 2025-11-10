@@ -1636,6 +1636,19 @@ class Scheduler(SchedulerInterface):
         self.finished_req_ids.clear()
         self.prev_step_scheduled_req_ids.clear()
 
+        # Clear optional state (for multi-engine, KV connector, etc.)
+        if self.finished_req_ids_dict is not None:
+            self.finished_req_ids_dict.clear()
+
+        self.finished_recving_kv_req_ids.clear()
+        self.failed_recving_kv_req_ids.clear()
+
+        # Clear encoder cache for multimodal requests
+        # Note: Encoder outputs are not preserved across sleep/wake cycles
+        # Multimodal requests will need to re-encode their inputs
+        # TODO: Consider saving/restoring encoder cache for efficiency
+        # self.encoder_cache_manager.clear()  # If this method exists
+
         # Restore all requests
         for req_id, serialized_req in checkpoint["requests"].items():
             request = deserialize_request(serialized_req)

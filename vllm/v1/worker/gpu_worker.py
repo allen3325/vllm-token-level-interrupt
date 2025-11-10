@@ -154,7 +154,23 @@ class Worker(WorkerBase):
             logger.debug("Level 2 sleep without buffer preservation")
 
         allocator = CuMemAllocator.get_instance()
-        allocator.sleep(offload_tags=("weights",) if level == 1 else tuple())
+
+        # Determine what to offload based on sleep level and state preservation
+        if preserve_buffers:
+            # When preserving state, we MUST also preserve KV cache
+            # Otherwise restored requests will have num_computed_tokens > 0
+            # but no KV cache blocks, causing incorrect generation
+            if level == 1:
+                offload_tags = ("weights", "kv_cache")
+            else:  # level == 2
+                offload_tags = ("weights", "kv_cache")
+            logger.debug(f"Sleep with state preservation, offloading: {offload_tags}")
+        else:
+            # Original behavior: only offload weights for level 1
+            # Level 2 discards everything (empty tuple)
+            offload_tags = ("weights",) if level == 1 else tuple()
+
+        allocator.sleep(offload_tags=offload_tags)
         free_bytes_after_sleep, total = torch.cuda.mem_get_info()
         freed_bytes = free_bytes_after_sleep - free_bytes_before_sleep
         used_bytes = total - free_bytes_after_sleep
