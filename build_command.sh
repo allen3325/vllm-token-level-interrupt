@@ -8,4 +8,5 @@ source .venv/bin/activate
 
 git clone https://github.com/vllm-project/vllm.git
 cd vllm
-VLLM_USE_PRECOMPILED=1 uv pip install --editable . --prerelease=allow
+# SETUPTOOLS_SCM_PRETEND_VERSION is you need to change
+SETUPTOOLS_SCM_PRETEND_VERSION=0.12.0+tokenlevel VLLM_USE_PRECOMPILED=1 uv pip install --editable .
