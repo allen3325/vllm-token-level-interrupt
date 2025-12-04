@@ -264,6 +264,28 @@
             margin: 10px 20px;
             border-left: 4px solid #dc2626;
         }
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 12px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .speed-control input {
+            width: 60px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            outline: none;
+            color: #333;
+        }
     </style>
 </head>
 <body>
@@ -282,6 +304,10 @@
                 </div>
             </div>
             <div class="control-buttons">
+                <div class="speed-control">
+                    <span>速度(ms):</span>
+                    <input type="number" id="speedInput" value="100" min="10" max="1000" step="10">
+                </div>
                 <button class="control-btn sleep-btn" id="sleepBtn">
                     😴 暫停
                 </button>
@@ -327,6 +353,7 @@
                 this.sendBtn = document.getElementById('sendBtn');
                 this.sleepBtn = document.getElementById('sleepBtn');
                 this.wakeBtn = document.getElementById('wakeBtn');
+                this.speedInput = document.getElementById('speedInput'); // 新增
                 this.typingIndicator = document.getElementById('typingIndicator');
                 this.statusDot = document.getElementById('statusDot');
                 this.statusText = document.getElementById('statusText');
@@ -335,7 +362,10 @@
                 this.isSleeping = false;
                 this.isStreaming = false;
                 this.modelName = null;
-                this.chatHistory = []; // 儲存對話歷史
+                this.chatHistory = [];
+                
+                // 新增：打字機速度控制
+                this.typingSpeed = 100; 
                 
                 this.init();
             }
@@ -351,6 +381,12 @@
                 
                 this.sleepBtn.addEventListener('click', () => this.sleep());
                 this.wakeBtn.addEventListener('click', () => this.wakeUp());
+
+                this.speedInput.addEventListener('change', (e) => {
+                    let val = parseInt(e.target.value);
+                    if (val < 10) val = 10;
+                    this.typingSpeed = val;
+                });
 
                 // 初始化：檢查健康狀態和獲取模型
                 await this.checkHealth();
@@ -457,21 +493,19 @@
                 }
             }
 
-            async sendMessage() {
+async sendMessage() {
                 const message = this.messageInput.value.trim();
                 if (!message || this.isStreaming || !this.modelName) return;
 
-                // 添加用戶訊息到歷史
+                // 1. 處理使用者訊息
                 this.chatHistory.push({
                     role: 'user',
                     content: message
                 });
-
-                // 添加用戶訊息到 UI
                 this.addMessage(message, true);
                 this.messageInput.value = '';
 
-                // 顯示載入狀態
+                // 2. 設定狀態
                 this.setLoading(true);
                 this.updateStatus('streaming');
 
@@ -487,29 +521,68 @@
                             messages: this.chatHistory,
                             temperature: 0.6,
                             top_p: 0.95,
-                            top_k: 20,
-                            min_p: 0.0,
-                            max_tokens: 1500,
-                            stream: true
-
+                            stream: true,
+                            chat_template_kwargs: {
+                                enable_thinking: false
+                            }
                         })
                     });
 
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-                    // 創建助手訊息容器
                     const assistantMessageDiv = this.addMessage('', false);
-                    let fullResponse = '';
+                    
+                    // --- 修改開始：改為 Token 緩衝模式 ---
+                    
+                    const tokenBuffer = [];      // 用陣列儲存收到的每一個 Token (Chunk)
+                    let displayedChunkIndex = 0; // 記錄目前螢幕已經顯示到第幾個 Token
+                    let fullTextForHistory = ''; // 用來最後存入歷史紀錄的完整字串
+                    let networkFinished = false; // 標記網路傳輸是否結束
 
-                    // 讀取串流響應
+                    // 啟動打字機效果循環
+                    const typeWriterLoop = () => {
+                        // 如果 顯示進度 < 緩衝區長度，代表還有 Token 沒顯示
+                        if (displayedChunkIndex < tokenBuffer.length) {
+                            // 取出下一個 Token
+                            const nextToken = tokenBuffer[displayedChunkIndex];
+                            
+                            // 附加到畫面上 (這裡用 += 直接串接文字)
+                            assistantMessageDiv.textContent += nextToken;
+                            
+                            // 進度 +1
+                            displayedChunkIndex++;
+                            this.scrollToBottom();
+                        }
+
+                        // 繼續條件：網路還沒斷 OR 還有 Token 沒印完
+                        if (!networkFinished || displayedChunkIndex < tokenBuffer.length) {
+                            setTimeout(typeWriterLoop, this.typingSpeed);
+                        } else {
+                            // 全部完成
+                            this.setLoading(false);
+                            this.updateStatus(this.isSleeping ? 'sleeping' : 'ready');
+                            
+                            // 更新歷史紀錄
+                            this.chatHistory.push({
+                                role: 'assistant',
+                                content: fullTextForHistory
+                            });
+                        }
+                    };
+
+                    // 開始顯示循環
+                    typeWriterLoop();
+
+                    // --- 網路接收部分 ---
                     const reader = response.body.getReader();
                     const decoder = new TextDecoder();
 
                     while (true) {
                         const { done, value } = await reader.read();
-                        if (done) break;
+                        if (done) {
+                            networkFinished = true;
+                            break;
+                        }
 
                         const chunk = decoder.decode(value, { stream: true });
                         const lines = chunk.split('\n');
@@ -517,39 +590,28 @@
                         for (const line of lines) {
                             if (line.startsWith('data: ')) {
                                 const data = line.slice(6).trim();
-                                
-                                if (data === '[DONE]') {
-                                    break;
-                                }
-
+                                if (data === '[DONE]') break;
                                 try {
                                     const json = JSON.parse(data);
                                     if (json.choices && json.choices[0].delta && json.choices[0].delta.content) {
-                                        fullResponse += json.choices[0].delta.content;
-                                        assistantMessageDiv.textContent = fullResponse;
-                                        this.scrollToBottom();
+                                        const content = json.choices[0].delta.content;
+                                        
+                                        // 關鍵修改：將收到的片段 (Token) 推入陣列
+                                        tokenBuffer.push(content);
+                                        
+                                        // 同時累積完整文字給歷史紀錄用
+                                        fullTextForHistory += content;
                                     }
-                                } catch (e) {
-                                    // 忽略解析錯誤
-                                }
+                                } catch (e) {}
                             }
                         }
-                    }
-
-                    // 添加助手回應到歷史
-                    if (fullResponse) {
-                        this.chatHistory.push({
-                            role: 'assistant',
-                            content: fullResponse
-                        });
                     }
 
                 } catch (error) {
                     console.error('Error:', error);
                     this.showError(error.message);
-                } finally {
                     this.setLoading(false);
-                    this.updateStatus(this.isSleeping ? 'sleeping' : 'ready');
+                    this.updateStatus('error');
                 }
             }
 
