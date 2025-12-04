@@ -160,6 +160,7 @@ class Worker(WorkerBase):
             # When preserving state, we MUST also preserve KV cache
             # Otherwise restored requests will have num_computed_tokens > 0
             # but no KV cache blocks, causing incorrect generation
+            # GERM TODO: Since preserving the state requires preserving the KV cache, regardless of the level, this can be simplified here.
             if level == 1:
                 offload_tags = ("weights", "kv_cache")
             else:  # level == 2

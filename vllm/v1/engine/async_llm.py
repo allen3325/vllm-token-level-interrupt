@@ -684,6 +684,8 @@ class AsyncLLM(EngineClient):
                           Allows active requests to resume after wake_up().
                           Default False for backward compatibility.
         """
+        logger.debug("in async_llm.py:687, calling reset_prefix_cache")
+        # GERM TODO: When preserve_state is true, avoid resetting the prefix cache. Add a conditional check.
         await self.reset_prefix_cache()
         await self.engine_core.sleep_async(level, preserve_state=preserve_state)
 

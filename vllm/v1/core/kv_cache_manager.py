@@ -445,6 +445,7 @@ class KVCacheManager:
         )
         return allocations
 
+    # GERM TODO: Should rename this function more clarify. This function just logged, the real restore is implement in CuMemAllocator wake_up
     def restore_block_allocations(self, allocations: dict[str, list[int]]) -> None:
         """
         Restore block allocations for requests.
